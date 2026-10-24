@@ -54,7 +54,7 @@
 </style>
 </head>
 <body>
-<div id="app"><div class="wrap">Loading… <i>Memuatkan…</i></div></div>
+<div id="app"><div class="wrap">Loading…</div></div>
 
 <script>
 var S = { outlets:[], data:null, filter:'stocked', cat:'' , edits:{} };
@@ -122,7 +122,7 @@ function renderOutlets(q) {
 }
 
 function openOutlet(tab) {
-  $('app').innerHTML = '<div class="wrap">Loading… <i>Memuatkan…</i></div>';
+  $('app').innerHTML = '<div class="wrap">Loading…</div>';
   call('getOutlet', [tab], function (d) {
     S.data = d; S.edits = {}; S.cat = '';
     S.filter = d.products.some(function (p) { return p.everStocked; }) ? 'stocked' : 'all';
@@ -143,11 +143,11 @@ function render() {
             (t.used ? 'Editing today’s Visit ' + t.n + ' (' + d.today + ')' : 'New Visit ' + t.n + ' — ' + d.today);
   var h = '<header><button class="back" id="back">‹ Outlets</button><h1>' + esc(d.outlet) + '</h1><div class="sub">' + sub +
           (d.last ? ' · last: Visit ' + d.last.n + ' ' + d.last.date : '') + '</div></header><div class="wrap">';
-  if (d.full) h += '<div class="msg">All 10 visit columns are used. Ask Tasha to start a new card. <i>Kad penuh.</i></div>';
+  if (d.full) h += '<div class="msg">All 10 visit columns are used. Ask Tasha to start a new card.</div>';
 
   var cats = []; d.products.forEach(function (p) { if (cats.indexOf(p.cat) < 0) cats.push(p.cat); });
   h += '<div class="bar"><button class="chip ' + (S.filter === 'stocked' ? 'on' : '') + '" data-f="stocked">Stocked here</button>' +
-       '<button class="chip ' + (S.filter === 'all' ? 'on' : '') + '" data-f="all">All · <i>Semua</i></button></div>' +
+       '<button class="chip ' + (S.filter === 'all' ? 'on' : '') + '" data-f="all">All</button></div>' +
        '<div class="bar"><button class="chip ' + (!S.cat ? 'on' : '') + '" data-c="">All sizes</button>' +
        cats.map(function (c) { return '<button class="chip ' + (S.cat === c ? 'on' : '') + '" data-c="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>';
 
@@ -163,7 +163,7 @@ function render() {
          '<div class="row"><span class="lbl">Balance</span>' + stepper(i, 'ctn', v.ctn, pre) + '<span class="unit">ctn</span>' +
          stepper(i, 'btl', v.btl, pre) + '<span class="unit">btl</span></div>' +
          '<div class="row"><span class="lbl">Order</span>' + stepper(i, 'ord', v.ord, pre) + '<span class="unit">ctn</span>' +
-         (p.lastBal && !e ? '<button class="same" data-same="' + i + '">Same<br>Sama</button>' : '') + '</div></div>';
+         (p.lastBal && !e ? '<button class="same" data-same="' + i + '">Same</button>' : '') + '</div></div>';
   });
   var n = Object.keys(S.edits).length;
   h += '</div><div class="save"><button id="save" ' + (!n || d.full ? 'disabled' : '') + '>Save ' + (n ? n + ' item' + (n > 1 ? 's' : '') : '') + '</button></div>';
