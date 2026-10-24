@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="robots" content="noindex">
+<title>Route Card</title>
+<meta name="theme-color" content="#d9001b">
+<meta name="referrer" content="no-referrer">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<style>
+  :root { --red:#d9001b; --ink:#222; --mut:#777; --bg:#f6f4f1; --ok:#1b8a3a; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; font-family:system-ui,-apple-system,Roboto,sans-serif; background:var(--bg); color:var(--ink); font-size:17px; }
+  header { position:sticky; top:0; z-index:5; background:var(--red); color:#fff; padding:12px 14px; }
+  header h1 { margin:0; font-size:19px; }
+  header .sub { font-size:13px; opacity:.9; margin-top:2px; }
+  .back { background:none; border:0; color:#fff; font-size:16px; padding:0 0 6px; }
+  .wrap { padding:10px 12px 120px; }
+  input.search { width:100%; font-size:17px; padding:12px; border:1px solid #ccc; border-radius:10px; margin-bottom:10px; }
+  .outlet { display:block; width:100%; text-align:left; padding:18px 16px; margin:0 0 10px; font-size:18px;
+            background:#fff; border:1px solid #ddd; border-radius:12px; }
+  .outlet small { display:block; color:var(--mut); font-size:13px; margin-top:3px; }
+  .bar { display:flex; gap:8px; overflow-x:auto; padding:4px 0 10px; }
+  .chip { flex:0 0 auto; padding:9px 14px; border-radius:20px; border:1px solid #ccc; background:#fff; font-size:14px; }
+  .chip.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .cat { font-weight:700; margin:16px 2px 6px; color:var(--red); }
+  .card { background:#fff; border:1px solid #ddd; border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .card.dirty { border:2px solid var(--ok); }
+  .top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .name { font-weight:600; }
+  .last { color:var(--mut); font-size:13px; }
+  .row { display:flex; align-items:center; gap:6px; margin-top:8px; }
+  .lbl { width:74px; font-size:13px; color:var(--mut); line-height:1.1; }
+  .lbl i { display:block; font-size:11px; }
+  .step { display:flex; align-items:center; }
+  .step button { width:46px; height:46px; font-size:24px; border:1px solid #bbb; background:#f1f1f1; border-radius:10px; }
+  .step input { width:58px; height:46px; text-align:center; font-size:20px; border:1px solid #bbb; border-radius:10px; margin:0 3px; }
+  .step input.pre { color:#999; }
+  .unit { font-size:12px; color:var(--mut); margin-left:2px; }
+  .same { margin-left:auto; height:46px; padding:0 10px; border-radius:10px; border:1px solid #bbb; background:#fff; font-size:13px; }
+  .save { position:fixed; left:0; right:0; bottom:0; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #ddd; z-index:6; }
+  .save button { width:100%; height:58px; font-size:19px; font-weight:700; color:#fff; background:var(--red); border:0; border-radius:12px; }
+  .save button:disabled { background:#bbb; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:flex-end; z-index:10; }
+  .sheet { background:#fff; width:100%; max-height:85vh; overflow:auto; border-radius:16px 16px 0 0; padding:16px; }
+  .sheet table { width:100%; border-collapse:collapse; font-size:15px; }
+  .sheet td { padding:6px 4px; border-bottom:1px solid #eee; }
+  .btns { display:flex; gap:10px; margin-top:14px; }
+  .btns button { flex:1; height:54px; font-size:17px; border-radius:12px; border:1px solid #bbb; background:#fff; }
+  .btns .go { background:var(--ok); color:#fff; border:0; font-weight:700; }
+  .msg { padding:14px; border-radius:12px; background:#fff3cd; margin-bottom:10px; }
+  .done { text-align:center; padding:40px 16px; }
+  .done .big { font-size:54px; }
+</style>
+</head>
+<body>
+<div id="app"><div class="wrap">Loading… <i>Memuatkan…</i></div></div>
+
+<script>
+var S = { outlets:[], data:null, filter:'stocked', cat:'' , edits:{} };
+var $ = function (id) { return document.getElementById(id); };
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+/* Standalone version: talks to the Apps Script JSON API with plain fetch(), no Google sign-in.
+   credentials:'omit' = no Google cookies are sent, so a Chrome signed into several accounts
+   can no longer reroute the request to /macros/u/1/. POST uses text/plain = no CORS preflight. */
+var EXEC_URL = 'https://script.google.com/macros/s/AKfycbz7iOoiB7A40FcVKGK-46Plq51Pkrp-EAvQJjP5ZAGmE_Lhg3c0DRtsJe1jYsHe14yP/exec';
+function api(req) {
+  return fetch(req.url, { method: req.method || 'GET', credentials: 'omit', redirect: 'follow', cache: 'no-store',
+                          headers: req.body ? { 'Content-Type': 'text/plain;charset=utf-8' } : undefined, body: req.body })
+    .then(function (res) { return res.text(); })
+    .then(function (txt) {
+      var j; try { j = JSON.parse(txt); } catch (e) { throw new Error('The Route Card server did not answer properly. Check your internet and try again. / Cuba lagi.'); }
+      if (!j.ok) throw new Error(j.error || 'Error');
+      return j.data;
+    });
+}
+function call(fn, args, ok) {
+  args = args || [];
+  var req;
+  if (fn === 'getOutlets') req = { url: EXEC_URL + '?api=outlets' };
+  else if (fn === 'getOutlet') req = { url: EXEC_URL + '?api=outlet&tab=' + encodeURIComponent(args[0]) };
+  else if (fn === 'saveVisit') req = { url: EXEC_URL, method: 'POST', body: JSON.stringify({ action: 'save', tab: args[0], entries: args[1] }) };
+  else return alert('Unknown call ' + fn);
+  api(req).then(ok, function (e) {
+    alert((e && e.message) || e);
+    var m = document.querySelector('.modal'); if (m) m.remove();   // let them press Save again
+    render();
+  });
+}
+
+/* ---- balance text <-> ctn + btl ---- */
+function parseBal(v) {
+  v = String(v == null ? '' : v).trim().toLowerCase();
+  if (!v) return null;
+  var m = v.match(/^([\d.]+)\s*ctn\s*\+\s*(\d+)\s*btl$/); if (m) return { ctn:+m[1], btl:+m[2] };
+  m = v.match(/^(\d+)\s*btl$/); if (m) return { ctn:0, btl:+m[1] };
+  if (!isNaN(+v)) return { ctn:+v, btl:0 };
+  return null;
+}
+function fmtBal(ctn, btl) {
+  ctn = +ctn || 0; btl = +btl || 0;
+  if (btl && ctn) return ctn + ' ctn + ' + btl + ' btl';
+  if (btl) return btl + ' btl';
+  return ctn;  // plain number = cartons, as on the card
+}
+
+/* ---- screens ---- */
+function loadOutlets() { call('getOutlets', [], function (o) { S.outlets = o; renderOutlets(); }); }
+
+function renderOutlets(q) {
+  q = (q || '').toLowerCase();
+  var h = '<header><h1>Route Card</h1><div class="sub">Pick outlet · <i>Pilih kedai</i></div></header><div class="wrap">' +
+    '<input class="search" id="q" placeholder="Search outlet / Cari kedai" value="' + esc(q) + '">';
+  S.outlets.filter(function (o) { return !q || o.outlet.toLowerCase().indexOf(q) >= 0; }).forEach(function (o) {
+    h += '<button class="outlet" data-tab="' + esc(o.tab) + '">' + esc(o.outlet) + '</button>';
+  });
+  $('app').innerHTML = h + '</div>';
+  $('q').oninput = function () { var v = this.value; renderOutlets(v); var e = $('q'); e.focus(); e.setSelectionRange(v.length, v.length); };
+  Array.prototype.forEach.call(document.querySelectorAll('.outlet'), function (b) {
+    b.onclick = function () { openOutlet(b.getAttribute('data-tab')); };
+  });
+}
+
+function openOutlet(tab) {
+  $('app').innerHTML = '<div class="wrap">Loading… <i>Memuatkan…</i></div>';
+  call('getOutlet', [tab], function (d) {
+    S.data = d; S.edits = {}; S.cat = '';
+    S.filter = d.products.some(function (p) { return p.everStocked; }) ? 'stocked' : 'all';
+    d.products.forEach(function (p) {
+      // pre-fill: today's values if re-opening today's visit, else last visit's balance
+      var src = d.target && d.target.used ? p.curBal : p.lastBal;
+      var b = parseBal(src) || { ctn:'', btl:'' };
+      p.pre = { ctn: b.ctn === 0 && b.btl ? '' : b.ctn, btl: b.btl || '', ord: d.target && d.target.used ? p.curOrd : '' };
+    });
+    render();
+  });
+}
+
+function render() {
+  var d = S.data; if (!d) return renderOutlets();
+  var t = d.target;
+  var sub = d.full ? 'Card full – no empty visit column' :
+            (t.used ? 'Editing today’s Visit ' + t.n + ' (' + d.today + ')' : 'New Visit ' + t.n + ' — ' + d.today);
+  var h = '<header><button class="back" id="back">‹ Outlets</button><h1>' + esc(d.outlet) + '</h1><div class="sub">' + sub +
+          (d.last ? ' · last: Visit ' + d.last.n + ' ' + d.last.date : '') + '</div></header><div class="wrap">';
+  if (d.full) h += '<div class="msg">All 10 visit columns are used. Ask Tasha to start a new card. <i>Kad penuh.</i></div>';
+
+  var cats = []; d.products.forEach(function (p) { if (cats.indexOf(p.cat) < 0) cats.push(p.cat); });
+  h += '<div class="bar"><button class="chip ' + (S.filter === 'stocked' ? 'on' : '') + '" data-f="stocked">Stocked here</button>' +
+       '<button class="chip ' + (S.filter === 'all' ? 'on' : '') + '" data-f="all">All · <i>Semua</i></button></div>' +
+       '<div class="bar"><button class="chip ' + (!S.cat ? 'on' : '') + '" data-c="">All sizes</button>' +
+       cats.map(function (c) { return '<button class="chip ' + (S.cat === c ? 'on' : '') + '" data-c="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>';
+
+  var cur = '';
+  d.products.forEach(function (p, i) {
+    if (S.filter === 'stocked' && !p.everStocked && !S.edits[i]) return;
+    if (S.cat && p.cat !== S.cat) return;
+    if (p.cat !== cur) { cur = p.cat; h += '<div class="cat">' + esc(cur) + '</div>'; }
+    var e = S.edits[i], v = e || p.pre, pre = e ? '' : ' pre';
+    var last = (p.lastBal || p.lastOrd) ? 'Last: ' + esc(p.lastBal || '–') + (p.lastOrd ? ' · ord ' + esc(p.lastOrd) : '') : '';
+    h += '<div class="card' + (e ? ' dirty' : '') + '" data-i="' + i + '"><div class="top"><span class="name">' + esc(p.name) +
+         ' <span class="last">' + esc(p.sku || '') + '</span></span><span class="last">' + last + '</span></div>' +
+         '<div class="row"><span class="lbl">Balance<i>Baki</i></span>' + stepper(i, 'ctn', v.ctn, pre) + '<span class="unit">ctn</span>' +
+         stepper(i, 'btl', v.btl, pre) + '<span class="unit">btl</span></div>' +
+         '<div class="row"><span class="lbl">Order<i>Pesanan</i></span>' + stepper(i, 'ord', v.ord, pre) + '<span class="unit">ctn</span>' +
+         (p.lastBal && !e ? '<button class="same" data-same="' + i + '">Same<br>Sama</button>' : '') + '</div></div>';
+  });
+  var n = Object.keys(S.edits).length;
+  h += '</div><div class="save"><button id="save" ' + (!n || d.full ? 'disabled' : '') + '>Save ' + (n ? n + ' item' + (n > 1 ? 's' : '') : '') + ' · Simpan</button></div>';
+  $('app').innerHTML = h;
+  wire();
+}
+
+function stepper(i, k, v, pre) {
+  return '<span class="step"><button data-i="' + i + '" data-k="' + k + '" data-d="-1">−</button>' +
+         '<input class="' + pre + '" inputmode="decimal" data-i="' + i + '" data-k="' + k + '" value="' + esc(v) + '">' +
+         '<button data-i="' + i + '" data-k="' + k + '" data-d="1">+</button></span>';
+}
+
+function edit(i) {
+  if (!S.edits[i]) { var p = S.data.products[i].pre; S.edits[i] = { ctn:p.ctn, btl:p.btl, ord:p.ord }; }
+  return S.edits[i];
+}
+
+function wire() {
+  $('back').onclick = function () { if (Object.keys(S.edits).length && !confirm('Discard unsaved entries? / Buang?')) return; S.data = null; renderOutlets(); };
+  each('[data-f]', function (b) { b.onclick = function () { S.filter = b.getAttribute('data-f'); render(); }; });
+  each('[data-c]', function (b) { b.onclick = function () { S.cat = b.getAttribute('data-c'); render(); }; });
+  each('.step button', function (b) {
+    b.onclick = function () {
+      var e = edit(+b.getAttribute('data-i')), k = b.getAttribute('data-k');
+      var x = (parseFloat(e[k]) || 0) + (+b.getAttribute('data-d'));
+      e[k] = x < 0 ? 0 : Math.round(x * 100) / 100;
+      keepScroll(render);
+    };
+  });
+  each('.step input', function (inp) {
+    inp.onfocus = function () { this.select(); };
+    inp.onchange = function () {
+      var e = edit(+inp.getAttribute('data-i')); var v = inp.value.trim();
+      e[inp.getAttribute('data-k')] = v === '' ? '' : (isNaN(+v) ? '' : +v);
+      keepScroll(render);
+    };
+  });
+  each('[data-same]', function (b) { b.onclick = function () { edit(+b.getAttribute('data-same')); keepScroll(render); }; });
+  var s = $('save'); if (s) s.onclick = review;
+}
+function each(sel, f) { Array.prototype.forEach.call(document.querySelectorAll(sel), f); }
+function keepScroll(f) { var y = window.scrollY; f(); window.scrollTo(0, y); }
+
+function entries() {
+  var out = [];
+  Object.keys(S.edits).forEach(function (i) {
+    var p = S.data.products[i], e = S.edits[i];
+    var hasBal = e.ctn !== '' || e.btl !== '';
+    out.push({ row:p.row, name:p.name, cat:p.cat, bal: hasBal ? fmtBal(e.ctn, e.btl) : '', ord: e.ord === '' ? '' : +e.ord });
+  });
+  return out.filter(function (x) { return x.bal !== '' || x.ord !== ''; }).sort(function (a, b) { return a.row - b.row; });
+}
+
+function review() {
+  var list = entries();
+  if (!list.length) return alert('Nothing entered. / Tiada data.');
+  var t = S.data.target;
+  var h = '<div class="modal"><div class="sheet"><b>Check before saving · Semak dulu</b><div class="last">' + esc(S.data.outlet) +
+          ' → Visit ' + t.n + ' (' + S.data.today + ')</div><table><tr><td></td><td>Balance</td><td>Order</td></tr>';
+  list.forEach(function (x) { h += '<tr><td>' + esc(x.cat + ' ' + x.name) + '</td><td>' + esc(x.bal) + '</td><td>' + esc(x.ord) + '</td></tr>'; });
+  h += '</table><div class="btns"><button id="no">Edit · Ubah</button><button class="go" id="yes">OK, save</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', h);
+  $('no').onclick = function () { document.querySelector('.modal').remove(); };
+  $('yes').onclick = function () {
+    this.disabled = true; this.textContent = 'Saving…';
+    call('saveVisit', [S.data.tab, list], function (r) {
+      var m = document.querySelector('.modal'); if (m) m.remove();
+      var outlet = S.data.outlet; S.data = null; S.edits = {};
+      $('app').innerHTML = '<div class="done"><div class="big">✅</div><h2>Saved · Disimpan</h2><p>' + esc(outlet) + ' – Visit ' + r.visit +
+        ' (' + r.date + '), ' + r.cells + ' cells in ' + r.column + '</p><div class="btns"><button class="go" id="next">Next outlet · Kedai seterusnya</button></div></div>';
+      $('next').onclick = function () { renderOutlets(); };
+    });
+  };
+}
+
+loadOutlets();
+</script>
+</body>
+</html>
