@@ -70,6 +70,7 @@
     .step button { width:34px; height:40px; font-size:20px; }
     .step input { width:40px; height:40px; font-size:16px; }
   }
+  .order { text-align:left; background:#fff; border:1px solid #ddd; border-radius:12px; padding:12px; font-size:16px; white-space:pre-wrap; margin:14px 0 0; font-family:inherit; }
 </style>
 </head>
 <body>
@@ -236,16 +237,35 @@ function entries() {
   Object.keys(S.edits).forEach(function (i) {
     var p = S.data.products[i], e = S.edits[i];
     var hasBal = e.ctn !== '' || e.btl !== '';
-    out.push({ row:p.row, name:p.name, cat:p.cat, bal: hasBal ? fmtBal(e.ctn, e.btl) : '', ord: e.ord === '' ? '' : +e.ord });
+    out.push({ row:p.row, name:p.name, short:p.short, cat:p.cat, bal: hasBal ? fmtBal(e.ctn, e.btl) : '', ord: e.ord === '' ? '' : +e.ord });
   });
   return out.filter(function (x) { return x.bal !== '' || x.ord !== ''; }).sort(function (a, b) { return a.row - b.row; });
 }
 
+function orderText(outlet, list, products) {
+  var groups = [], by = {}, n = {};
+  (products || []).forEach(function (p) { n[p.cat] = (n[p.cat] || 0) + 1; });
+  list.forEach(function (x) {
+    if (x.ord === '' || !(+x.ord > 0)) return;
+    if (!by[x.cat]) { by[x.cat] = []; groups.push(x.cat); }
+    by[x.cat].push((x.short || x.name) + ' ' + x.ord);
+  });
+  if (!groups.length) return '';
+  var parts = groups.map(function (c) {
+    return n[c] === 1 ? c + ' ' + by[c][0] : c + '\n' + by[c].join('\n');
+  });
+  return outlet + '\n\n' + parts.join('\n\n');
+}
+function copyText(t, btn) {
+  function ok() { btn.textContent = 'Copied ✓'; setTimeout(function () { btn.textContent = 'Copy order'; }, 2000); }
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(ok, fb); } else fb();
+  function fb() { var a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); ok(); } catch (e) {} a.remove(); }
+}
 function review() {
   var list = entries();
   if (!list.length) return alert('Nothing entered.');
   var t = S.data.target;
-  var h = '<div class="modal"><div class="sheet"><b>Check before saving · Semak dulu</b><div class="last">' + esc(S.data.outlet) +
+  var h = '<div class="modal"><div class="sheet"><b>Check before saving</b><div class="last">' + esc(S.data.outlet) +
           ' → Visit ' + t.n + ' (' + S.data.today + ')</div><table><tr><td></td><td>Balance</td><td>Order</td></tr>';
   list.forEach(function (x) { h += '<tr><td>' + esc(x.cat + ' ' + x.name) + '</td><td>' + esc(x.bal) + '</td><td>' + esc(x.ord) + '</td></tr>'; });
   h += '</table><div class="btns"><button id="no">Edit</button><button class="go" id="yes">OK, save</button></div></div></div>';
@@ -255,9 +275,12 @@ function review() {
     this.disabled = true; this.textContent = 'Saving…';
     call('saveVisit', [S.data.tab, list], function (r) {
       var m = document.querySelector('.modal'); if (m) m.remove();
-      var outlet = S.data.outlet; S.data = null; S.edits = {};
+      var outlet = S.data.outlet, ot = orderText(outlet, list, S.data.products); S.data = null; S.edits = {};
       $('app').innerHTML = '<div class="done"><div class="big">✅</div><h2>Saved</h2><p>' + esc(outlet) + ' – Visit ' + r.visit +
-        ' (' + r.date + '), ' + r.cells + ' cells in ' + r.column + '</p><div class="btns"><button class="go" id="next">Next outlet</button></div></div>';
+        ' (' + r.date + '), ' + r.cells + ' cells in ' + r.column + '</p>' +
+        (ot ? '<pre class="order" id="ot">' + esc(ot) + '</pre><div class="btns"><button id="copy">Copy order</button></div>' : '') +
+        '<div class="btns"><button class="go" id="next">Next outlet</button></div></div>';
+      if (ot) $('copy').onclick = function () { copyText(ot, this); };
       $('next').onclick = function () { renderOutlets(); };
     });
   };
