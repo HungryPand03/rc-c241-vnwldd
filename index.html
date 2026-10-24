@@ -69,7 +69,7 @@ function api(req) {
                           headers: req.body ? { 'Content-Type': 'text/plain;charset=utf-8' } : undefined, body: req.body })
     .then(function (res) { return res.text(); })
     .then(function (txt) {
-      var j; try { j = JSON.parse(txt); } catch (e) { throw new Error('The Route Card server did not answer properly. Check your internet and try again. / Cuba lagi.'); }
+      var j; try { j = JSON.parse(txt); } catch (e) { throw new Error('The Route Card server did not answer properly. Check your internet and try again.'); }
       if (!j.ok) throw new Error(j.error || 'Error');
       return j.data;
     });
@@ -109,8 +109,8 @@ function loadOutlets() { call('getOutlets', [], function (o) { S.outlets = o; re
 
 function renderOutlets(q) {
   q = (q || '').toLowerCase();
-  var h = '<header><h1>Route Card</h1><div class="sub">Pick outlet · <i>Pilih kedai</i></div></header><div class="wrap">' +
-    '<input class="search" id="q" placeholder="Search outlet / Cari kedai" value="' + esc(q) + '">';
+  var h = '<header><h1>Route Card</h1><div class="sub">Pick outlet</div></header><div class="wrap">' +
+    '<input class="search" id="q" placeholder="Search outlet" value="' + esc(q) + '">';
   S.outlets.filter(function (o) { return !q || o.outlet.toLowerCase().indexOf(q) >= 0; }).forEach(function (o) {
     h += '<button class="outlet" data-tab="' + esc(o.tab) + '">' + esc(o.outlet) + '</button>';
   });
@@ -160,13 +160,13 @@ function render() {
     var last = (p.lastBal || p.lastOrd) ? 'Last: ' + esc(p.lastBal || '–') + (p.lastOrd ? ' · ord ' + esc(p.lastOrd) : '') : '';
     h += '<div class="card' + (e ? ' dirty' : '') + '" data-i="' + i + '"><div class="top"><span class="name">' + esc(p.name) +
          ' <span class="last">' + esc(p.sku || '') + '</span></span><span class="last">' + last + '</span></div>' +
-         '<div class="row"><span class="lbl">Balance<i>Baki</i></span>' + stepper(i, 'ctn', v.ctn, pre) + '<span class="unit">ctn</span>' +
+         '<div class="row"><span class="lbl">Balance</span>' + stepper(i, 'ctn', v.ctn, pre) + '<span class="unit">ctn</span>' +
          stepper(i, 'btl', v.btl, pre) + '<span class="unit">btl</span></div>' +
-         '<div class="row"><span class="lbl">Order<i>Pesanan</i></span>' + stepper(i, 'ord', v.ord, pre) + '<span class="unit">ctn</span>' +
+         '<div class="row"><span class="lbl">Order</span>' + stepper(i, 'ord', v.ord, pre) + '<span class="unit">ctn</span>' +
          (p.lastBal && !e ? '<button class="same" data-same="' + i + '">Same<br>Sama</button>' : '') + '</div></div>';
   });
   var n = Object.keys(S.edits).length;
-  h += '</div><div class="save"><button id="save" ' + (!n || d.full ? 'disabled' : '') + '>Save ' + (n ? n + ' item' + (n > 1 ? 's' : '') : '') + ' · Simpan</button></div>';
+  h += '</div><div class="save"><button id="save" ' + (!n || d.full ? 'disabled' : '') + '>Save ' + (n ? n + ' item' + (n > 1 ? 's' : '') : '') + '</button></div>';
   $('app').innerHTML = h;
   wire();
 }
@@ -183,7 +183,7 @@ function edit(i) {
 }
 
 function wire() {
-  $('back').onclick = function () { if (Object.keys(S.edits).length && !confirm('Discard unsaved entries? / Buang?')) return; S.data = null; renderOutlets(); };
+  $('back').onclick = function () { if (Object.keys(S.edits).length && !confirm('Discard unsaved entries?')) return; S.data = null; renderOutlets(); };
   each('[data-f]', function (b) { b.onclick = function () { S.filter = b.getAttribute('data-f'); render(); }; });
   each('[data-c]', function (b) { b.onclick = function () { S.cat = b.getAttribute('data-c'); render(); }; });
   each('.step button', function (b) {
@@ -220,7 +220,7 @@ function entries() {
 
 function review() {
   var list = entries();
-  if (!list.length) return alert('Nothing entered. / Tiada data.');
+  if (!list.length) return alert('Nothing entered.');
   var t = S.data.target;
   var h = '<div class="modal"><div class="sheet"><b>Check before saving · Semak dulu</b><div class="last">' + esc(S.data.outlet) +
           ' → Visit ' + t.n + ' (' + S.data.today + ')</div><table><tr><td></td><td>Balance</td><td>Order</td></tr>';
@@ -234,7 +234,7 @@ function review() {
       var m = document.querySelector('.modal'); if (m) m.remove();
       var outlet = S.data.outlet; S.data = null; S.edits = {};
       $('app').innerHTML = '<div class="done"><div class="big">✅</div><h2>Saved · Disimpan</h2><p>' + esc(outlet) + ' – Visit ' + r.visit +
-        ' (' + r.date + '), ' + r.cells + ' cells in ' + r.column + '</p><div class="btns"><button class="go" id="next">Next outlet · Kedai seterusnya</button></div></div>';
+        ' (' + r.date + '), ' + r.cells + ' cells in ' + r.column + '</p><div class="btns"><button class="go" id="next">Next outlet</button></div></div>';
       $('next').onclick = function () { renderOutlets(); };
     });
   };
