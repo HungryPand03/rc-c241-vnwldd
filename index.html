@@ -233,7 +233,7 @@ function review() {
     call('saveVisit', [S.data.tab, list], function (r) {
       var m = document.querySelector('.modal'); if (m) m.remove();
       var outlet = S.data.outlet; S.data = null; S.edits = {};
-      $('app').innerHTML = '<div class="done"><div class="big">✅</div><h2>Saved · Disimpan</h2><p>' + esc(outlet) + ' – Visit ' + r.visit +
+      $('app').innerHTML = '<div class="done"><div class="big">✅</div><h2>Saved</h2><p>' + esc(outlet) + ' – Visit ' + r.visit +
         ' (' + r.date + '), ' + r.cells + ' cells in ' + r.column + '</p><div class="btns"><button class="go" id="next">Next outlet</button></div></div>';
       $('next').onclick = function () { renderOutlets(); };
     });
