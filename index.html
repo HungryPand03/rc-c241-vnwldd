@@ -37,6 +37,7 @@
   .step input { width:58px; height:46px; text-align:center; font-size:20px; border:1px solid #bbb; border-radius:10px; margin:0 3px; }
   .step input.pre { color:#999; }
   .unit { font-size:12px; color:var(--mut); margin-left:2px; }
+  .bin { border:none; background:none; font-size:18px; padding:0 4px; color:#999; }
   .same { margin-left:auto; height:46px; padding:0 10px; border-radius:10px; border:1px solid #bbb; background:#fff; font-size:13px; }
   .save { position:fixed; left:0; right:0; bottom:0; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #ddd; z-index:6; }
   .save button { width:100%; height:58px; font-size:19px; font-weight:700; color:#fff; background:var(--red); border:0; border-radius:12px; }
@@ -159,13 +160,13 @@ function render() {
     var e = S.edits[i], v = e || p.pre, pre = e ? '' : ' pre';
     var last = (p.lastBal || p.lastOrd) ? 'Last: ' + esc(p.lastBal || '–') + (p.lastOrd ? ' · ord ' + esc(p.lastOrd) : '') : '';
     h += '<div class="card' + (e ? ' dirty' : '') + '" data-i="' + i + '"><div class="top"><span class="name">' + esc(p.name) +
-         ' <span class="last">' + esc(p.sku || '') + '</span></span><span class="last">' + last + '</span></div>' +
+         ' <span class="last">' + esc(p.sku || '') + '</span></span><span class="last">' + last + ' <button class="bin" data-bin="' + i + '" title="Clear">🗑</button></span></div>' +
          '<div class="row"><span class="lbl">Balance</span>' + stepper(i, 'ctn', v.ctn, pre) + '<span class="unit">ctn</span>' +
          stepper(i, 'btl', v.btl, pre) + '<span class="unit">btl</span></div>' +
          '<div class="row"><span class="lbl">Order</span>' + stepper(i, 'ord', v.ord, pre) + '<span class="unit">ctn</span>' +
          (p.lastBal && !e ? '<button class="same" data-same="' + i + '">Same</button>' : '') + '</div></div>';
   });
-  var n = Object.keys(S.edits).length;
+  var n = entries().length;
   h += '</div><div class="save"><button id="save" ' + (!n || d.full ? 'disabled' : '') + '>Save ' + (n ? n + ' item' + (n > 1 ? 's' : '') : '') + '</button></div>';
   $('app').innerHTML = h;
   wire();
@@ -202,6 +203,7 @@ function wire() {
       keepScroll(render);
     };
   });
+  each('[data-bin]', function (b) { b.onclick = function () { S.edits[+b.getAttribute('data-bin')] = { ctn:'', btl:'', ord:'' }; keepScroll(render); }; });
   each('[data-same]', function (b) { b.onclick = function () { edit(+b.getAttribute('data-same')); keepScroll(render); }; });
   var s = $('save'); if (s) s.onclick = review;
 }
