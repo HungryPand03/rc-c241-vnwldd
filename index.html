@@ -155,13 +155,15 @@ function openOutlet(tab) {
   });
 }
 
+function dmy(s){ var m=String(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if(!m) return null; var y=+m[3]; if(y<100) y+=2000; return Date.UTC(y, +m[2]-1, +m[1]); }
+function daysAgo(a, b){ var x=dmy(a), y=dmy(b); if(x==null||y==null) return ''; var n=Math.round((y-x)/86400000); if(n<0) return ''; return n===0 ? ' (today)' : n===1 ? ' (1 day ago)' : ' (' + n + ' days ago)'; }
 function render() {
   var d = S.data; if (!d) return renderOutlets();
   var t = d.target;
   var sub = d.full ? 'Card full – no empty visit column' :
             (t.used ? 'Editing today’s Visit ' + t.n + ' (' + d.today + ')' : 'New Visit ' + t.n + ' — ' + d.today);
   var h = '<header><button class="back" id="back">‹ Outlets</button><h1>' + esc(d.outlet) + '</h1><div class="sub">' + sub +
-          (d.last ? ' · last: Visit ' + d.last.n + ' ' + d.last.date : '') + '</div></header><div class="wrap">';
+          (d.last ? ' · last: Visit ' + d.last.n + ' ' + d.last.date + daysAgo(d.last.date, d.today) : '') + '</div></header><div class="wrap">';
   if (d.full) h += '<div class="msg">All 10 visit columns are used. Ask Tasha to start a new card.</div>';
 
   var cats = []; d.products.forEach(function (p) { if (cats.indexOf(p.cat) < 0) cats.push(p.cat); });
