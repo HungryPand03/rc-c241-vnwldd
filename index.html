@@ -168,7 +168,7 @@ function render() {
 
   var cats = []; d.products.forEach(function (p) { if (cats.indexOf(p.cat) < 0) cats.push(p.cat); });
   h += '<div class="bar"><button class="chip ' + (S.filter === 'stocked' ? 'on' : '') + '" data-f="stocked">Stocked here</button>' +
-       '<button class="chip ' + (S.filter === 'all' ? 'on' : '') + '" data-f="all">All</button></div>' +
+       '<button class="chip ' + (S.filter === 'all' ? 'on' : '') + '" data-f="all">All</button><button class="chip" id="clearall" style="margin-left:auto">🗑 Clear all</button></div>' +
        '<div class="bar"><button class="chip ' + (!S.cat ? 'on' : '') + '" data-c="">All sizes</button>' +
        cats.map(function (c) { return '<button class="chip ' + (S.cat === c ? 'on' : '') + '" data-c="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>';
 
@@ -223,6 +223,7 @@ function wire() {
       keepScroll(render);
     };
   });
+  var ca = $('clearall'); if (ca) ca.onclick = function () { if (!confirm('Clear all items?')) return; S.data.products.forEach(function (p, i) { if (p.everStocked || S.edits[i]) S.edits[i] = { ctn:'', btl:'', ord:'' }; }); keepScroll(render); };
   each('[data-bin]', function (b) { b.onclick = function () { S.edits[+b.getAttribute('data-bin')] = { ctn:'', btl:'', ord:'' }; keepScroll(render); }; });
   each('[data-same]', function (b) { b.onclick = function () { edit(+b.getAttribute('data-same')); keepScroll(render); }; });
   var s = $('save'); if (s) s.onclick = review;
