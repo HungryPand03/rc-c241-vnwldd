@@ -248,7 +248,7 @@ function review() {
   var h = '<div class="modal"><div class="sheet"><b>Check before saving · Semak dulu</b><div class="last">' + esc(S.data.outlet) +
           ' → Visit ' + t.n + ' (' + S.data.today + ')</div><table><tr><td></td><td>Balance</td><td>Order</td></tr>';
   list.forEach(function (x) { h += '<tr><td>' + esc(x.cat + ' ' + x.name) + '</td><td>' + esc(x.bal) + '</td><td>' + esc(x.ord) + '</td></tr>'; });
-  h += '</table><div class="btns"><button id="no">Edit · Ubah</button><button class="go" id="yes">OK, save</button></div></div></div>';
+  h += '</table><div class="btns"><button id="no">Edit</button><button class="go" id="yes">OK, save</button></div></div></div>';
   document.body.insertAdjacentHTML('beforeend', h);
   $('no').onclick = function () { document.querySelector('.modal').remove(); };
   $('yes').onclick = function () {
